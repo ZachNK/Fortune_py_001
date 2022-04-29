@@ -61,25 +61,27 @@ class toList:
     # 지장간 (리스트형)
     def men_in_branch(branch):
         #          0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,11,12,13,14,15,16,17,18,19,20,21,22, 23,24,25
+        #          ㆍ=0, 甲=1, 乙=2, 丙=3, 丁=4, 戊=5, 己=6, 庚=7, 辛=8, 壬=9, 癸=10
         all_men = [5, 3, 1, 0, 2, 10, 5, 7, 3, 6, 4, 2, 6, 5, 9, 7, 0, 8, 4, 5, 1, 9, 0, 10, 8, 6]
-        # 0: 0, 1, 2
-        # 1: 2, 3, 4
-        # 2: 4, 5, 6
-        # 3: 6, 7, 8
-        # 4: 8, 9, 10
-        # 5: 10, 11, 12
-        # 6: 13, 14, 15
-        # 7: 15, 16, 17
-        # 8: 17, 18, 19
-        # 9: 19, 20, 21
-        #10: 21, 22, 23
-        #11: 23, 24, 25
+        # 寅 0: 0, 1, 2
+        # 卯 1: 2, 3, 4
+        # 辰 2: 4, 5, 6
+        # 巳 3: 6, 7, 8
+        # 午 4: 8, 9, 10
+        # 未 5: 10, 11, 12
+        # 申 6: 13, 14, 15
+        # 酉 7: 15, 16, 17
+        # 戌 8: 17, 18, 19
+        # 亥 9: 19, 20, 21
+        # 子 10: 21, 22, 23
+        # 丑 11: 23, 24, 25
         add = 0
         branch -= 3
         if branch < 0:
             branch += 12
         if branch >= 6:
             add = 1
+        # men = [ 여기, 중기, 정기 ] (지장간 숫자 1~10=甲~癸, 0=ㆍ)
         men = [all_men[(branch * 2 + add)], all_men[(branch * 2 + add) + 1], all_men[(branch * 2 + add) + 2]]
         return men
 
@@ -147,12 +149,11 @@ class Roads:
         return result
 
     def show_roads_LookUp(f=[8]):
-        l = []
         for i in range(4):
             x = Roads.see_road(f[4], f[7-(2*i)])
-            l.append(x)
-
-        print(f'{nm.Road(l[0]).name} {nm.Road(l[1]).name} {nm.Road(l[2]).name} {nm.Road(l[3]).name}')
+            c = Fives.stemfives(f[2*(3-i)])
+            print(f'{Fives.colors(c)}{nm.Road(x).name}', end=' ')
+        print('\033[37m')
 
     def show_roads_seat(f=[8]):
         p = []
@@ -160,19 +161,23 @@ class Roads:
         r = []
 
         for i in range(4):
+            # n = 7, 5, 3, 1
             n= 7 - (2 * i)
+            # x = 여기 천간 숫자 (1~10; 甲, 乙 ... 壬, 癸)
             x = toList.men_in_branch(f[n])[0]
             p.append(Fives.stemfives(x))
             p.append(Roads.see_road(x, f[n]))
 
+            # y = 중기 천간 숫자 (0~10; ㆍ, 甲, 乙 ... 壬, 癸)
             y = toList.men_in_branch(f[n])[1]
             if y != 0:
                 q.append(Fives.stemfives(y))
                 q.append(Roads.see_road(y, f[n]))
             else:
-                q.append(0)
+                q.append(Fives.stemfives(x))
                 q.append(0)
 
+            # z = 중기 천간 숫자 (1~10; 甲, 乙 ... 壬, 癸)
             z = toList.men_in_branch(f[n])[2]
             r.append(Fives.stemfives(z))
             r.append(Roads.see_road(z, f[n]))
@@ -186,18 +191,17 @@ class Roads:
                 print(f'{nm.Road(p[a]).name}', end=' ')
 
         for a in range(8):
-            if a == 7:
-                print(f'{nm.Road(q[a]).name}\033[37m', end='\n')
-            elif a %2 == 0:
-                if q[a] == 0:
-                    print('', end='')
-                else:
-                    print(f'{Fives.colors(q[a])}', end='')
-            elif a %2 != 0:
-                if q[a] == 0:
-                    print('○', end=' ')
-                else:
-                    print(f'{nm.Road(q[a]).name}', end=' ')
+            # 0, 1, 2, 3, 4, 5, 6, 7
+            # 중기(q리스트)에서 짝수 번째: 색상 코드
+            if a%2 == 0:
+                color = Fives.colors(q[a]) if q[a] != 0 else Fives.colors(p[a])
+                print(Fives.colors(q[a]), end='')
+            # 중기(q리스트)에서 홀수 번째: 포태법 글자 코드
+            else:
+                # put (string), q[a] = 0인 경우 'ㆍ', 나머지는 포태법 글자 그대로 쓰기
+                put = nm.Road(q[a]).name if q[a] != 0 else 'ㆍ'
+                ent = '\n' if a == 7 else ' '
+                print(put, end=ent)
 
         for a in range(8):
             if a == 7:
@@ -310,6 +314,7 @@ class Destiny:
         d = Destiny.cycle_day(sky, land, born_hour, born_min)
         # [생일, 생시, 생분으로 시주 출력하기] #
         t = Destiny.find_time_cycle(lord, born_hour, born_min)
+        # result =[ 년간, 년지, 월간, 월지, 일간, 일지, 시간, 시지 ]
         result =[int(y[0]), int(y[1]), int(m[0]), int(m[1]), int(d[0]), int(d[1]), int(t[0]), int(t[1])]
         return  result
 
@@ -351,6 +356,83 @@ class Base:
                          toNum.deity_stem2stem(f[4], x4)
         result = [d1, d2, d3, d4, d6, d7, d8]
         return result
+
+    def lucks(f=[8], born_year =1, born_month=1, born_day=1, sex=1):
+        now = time.localtime().tm_year
+        age = now - born_year
+        point = 0 #대운수
+        c_year = toNum.cycle2num(f[0], f[1])
+        cycleM = [f[2], f[3]]
+        arrow1 = []
+        arrow2 = []
+
+        go = True
+        if sex % 2 != c_year % 2:
+            go = False
+
+        prev = born_month-1
+        if prev <= 0:
+            prev += 12
+
+        next = born_month + 1
+        if next >= 12:
+            next -= 12
+
+        start0 = Destiny.first_day(prev)
+        start1 = Destiny.first_day(born_month)
+        start2 = Destiny.first_day(next)
+
+        count = 0
+        lucks = []
+        if go == True:
+            if born_day <= start1:
+                count = start1 - born_day
+            else:
+                count = start2 + Destiny.last_day(born_month) - born_day
+            for i in range(1, 11):
+                goSky = toNum.filter_Stem(cycleM[0] + i)
+                goLand = toNum.filter_Branch(cycleM[1] + i)
+                lucks.append([round(count/3) + (i-1)*10, goSky, goLand])
+        else:
+            if born_day <= start1:
+                count = Destiny.last_day(prev) + born_day - start0 # 2022-04-23 수정
+            else:
+                count = born_day - start1
+            for i in range(1, 11):
+                revSky = toNum.filter_Stem(cycleM[0] -i)
+                revLand = toNum.filter_Branch(cycleM[1] - i)
+                lucks.append([round(count/3) + (i-1)*10, revSky, revLand])
+
+        for i in range(10):
+            k = lucks[9 - i]
+            if age >= k[0] and age < k[0] + 10:
+                point = k[0] #대운수 자리
+                arrow1.append('▼')
+                arrow1.append('\t')
+            else:
+                arrow1.append('  ')
+                arrow1.append('\t')
+
+        ## 세운
+
+        micro = []
+        s = toList.num2cycle((point + born_year)-3)
+        ord = age - point
+
+        for num in range(10):
+            yearNum = point + born_year + num
+            pYear = yearNum % 100
+            micro.append([pYear, toNum.filter_Stem(s[0] + num), toNum.filter_Branch(s[1] + num)])
+
+        for num in range(10):
+            if 9 - num == ord:
+                arrow2.append('▼')
+                arrow2.append('\t')
+            else:
+                arrow2.append('  ')
+                arrow2.append('\t')
+
+        return lucks, micro, arrow1, arrow2
 
 
 class Format:
@@ -397,6 +479,16 @@ class Format:
 
         return form
 
+    def formula(f=[8]):
+        d = []
+        k = Format.takeForm(f)
+        keys = Format.key4target(k)
+        for i, con in enumerate(keys):
+            for j in range(4):
+                if con == toNum.deity_stem2stem(f[4], f[2*j]) and j != 2:
+                    d.append(con)
+        return d, k
+
 class PrintOut:
 
     def print_fortune(f=[8]):
@@ -422,12 +514,12 @@ class PrintOut:
 
     def print_mens(f=[8]):
         p = Base.show_mens(f)
-        for t in range(3):
-            print(Fives.colors(Fives.stemfives(toList.men_in_branch(f[7])[t])) + p[4 * t] + ' '
-                  + Fives.colors(Fives.stemfives(toList.men_in_branch(f[5])[t])) + p[4 * t + 1] + ' '
-                  + Fives.colors(Fives.stemfives(toList.men_in_branch(f[3])[t])) + p[4 * t + 2] + ' '
-                  + Fives.colors(Fives.stemfives(toList.men_in_branch(f[1])[t])) + p[4 * t + 3] + ' '
-                  + '\033[0m')
+        for i, con in enumerate(p):
+            x = nm.Stem[con].value if con != 'ㆍ' else nm.Stem[p[i-4]].value
+            c_num = int(Fives.stemfives(x))
+            ent = '\n' if i==3 or i==7 else ' '
+            print(f'{Fives.colors(c_num)}{con}', end=ent)
+        print('\033[0m')
 
     def print_keys(f=[8]):
         form = Format.takeForm(f)
@@ -450,6 +542,8 @@ class PrintOut:
         point = 0 #대운수
         c_year = toNum.cycle2num(f[0], f[1])
         cycleM = [f[2], f[3]]
+        arrow1 = []
+        arrow2 = []
 
         go = True
         if sex % 2 != c_year % 2:
@@ -466,6 +560,7 @@ class PrintOut:
         start0 = Destiny.first_day(prev)
         start1 = Destiny.first_day(born_month)
         start2 = Destiny.first_day(next)
+
         count = 0
         lucks = []
         if go == True:
@@ -479,7 +574,7 @@ class PrintOut:
                 lucks.append([round(count/3) + (i-1)*10, goSky, goLand])
         else:
             if born_day <= start1:
-                count = toNum.last_day(prev) + born_day - start0
+                count = Destiny.last_day(prev) + born_day - start0 # 2022-04-23 수정
             else:
                 count = born_day - start1
             for i in range(1, 11):
@@ -495,11 +590,15 @@ class PrintOut:
                     print('▼', end='\n')
                 else:
                     print('▼', end='\t')
+                arrow1.append('▼')
+                arrow1.append('\t')
             else:
                 if i == 9:
                     print('  ', end='\n')
                 else:
                     print('  ', end='\t')
+                arrow1.append('  ')
+                arrow1.append('\t')
 
         for i in range(10):
             k = lucks[9 - i]
@@ -535,8 +634,11 @@ class PrintOut:
         micro = []
         s = toList.num2cycle((point + born_year)-3)
         ord = age - point
-        for y in range(10):
-            micro.append([toNum.filter_Stem(s[0]+y), toNum.filter_Branch(s[1]+y)])
+
+        for num in range(10):
+            yearNum = point + born_year + num
+            pYear = yearNum % 100
+            micro.append([pYear, toNum.filter_Stem(s[0] + num), toNum.filter_Branch(s[1] + num)])
 
         for num in range(10):
             if 9 - num == ord:
@@ -544,24 +646,26 @@ class PrintOut:
                     print('▼', end='\n')
                 else:
                     print('▼', end='\t')
+                arrow2.append('▼')
+                arrow2.append('\t')
             else:
                 if num == 9:
                     print('  ', end='\n')
                 else:
                     print('  ', end='\t')
+                arrow2.append('  ')
+                arrow2.append('\t')
 
         for num in range(10):
-            yearNum = point + born_year + 9 - num
-            pYear = yearNum % 100
             if num == 9:
-                print(f'{pYear}\'', end='\n')
+                print(f'{micro[9-num][0]}\'', end='\n')
             else:
-                print(f'{pYear}\'', end='\t')
+                print(f'{micro[9-num][0]}\'', end='\t')
 
         for num in range(10):
             n = micro[9-num]
-            name = nm.Stem(n[0]).name
-            color = Fives.colors(Fives.stemfives(n[0]))
+            name = nm.Stem(n[1]).name
+            color = Fives.colors(Fives.stemfives(n[1]))
             if num == 9:
                 print(f'{color+name}', end='\n')
             else:
@@ -569,11 +673,12 @@ class PrintOut:
 
         for num in range(10):
             n = micro[9-num]
-            name = nm.Branch(n[1]).name
-            color = Fives.colors(Fives.stemfives(toList.men_in_branch(n[1])[2]))
+            name = nm.Branch(n[2]).name
+            color = Fives.colors(Fives.stemfives(toList.men_in_branch(n[2])[2]))
             if num == 9:
                 print(f'{color+name}', end='\n')
             else:
                 print(f'{color + name}', end='\t')
         print('\033[37m')
 
+        return lucks, micro, arrow1, arrow2
